@@ -20,6 +20,19 @@ License for the specific language governing permissions and limitations
 under the License.
 */
 
+/* modified from: https://github.com/slatedocs/slate/issues/855 */
+.content {
+  .center-column + pre {    
+    position: static;
+    float: none;
+    clear: none;
+    margin: 0 28px;
+    left: 0;
+    width: 40%;
+    margin-bottom: 14px;
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // GENERAL STUFF
 ////////////////////////////////////////////////////////////////////////////////

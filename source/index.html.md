@@ -23,12 +23,223 @@ headingLevel: 2
 ## Introduction
 > Select a language above to show examples of using the API in that language.
 
-Welcome to <a href="https://planetterp.com">PlanetTerp</a>'s API. This API provides access to data relating to courses, professors, and grade data at the <a href="https://umd.edu">University of Maryland &mdash; College Park</a> (UMD).<br /><br /> The primary purpose of this API is to provide access to grade data. There is already a student-run API that provides access to professor and grade data: <a href="https://umd.io">umd.io</a>.<br /><br /> The course and professor data on this website was obtained using a combination of umd.io and <a href="https://app.testudo.umd.edu/soc/">UMD's Schedule of Classes</a>. The grade data is from the <a href="https://www.irpa.umd.edu"">UMD Office of Institutional Research, Planning &amp; Assessment</a> (IRPA) and obtained through <a href="https://www.umd.edu/administration/public-information-request">a request</a> under <a href="http://www.marylandattorneygeneral.gov/OpenGov%20Documents/PIA_manual_printable.pdf">the state of Maryland's Public Information Act</a> (PIA).<br /><br/> The base URL of the API is <a href="https://api.planetterp.com/v1">https://api.planetterp.com/v1</a>.<br /><br /> For support, please email <a href="mailto:admin@planetterp.com">admin@planetterp.com</a>.
+Welcome to <a href="https://planetterp.com">PlanetTerp</a>'s API. This API provides access to data relating to courses, professors, and grade data at the <a href="https://umd.edu">University of Maryland &mdash; College Park</a> (UMD).<br /><br /> The primary purpose of this API is to provide access to grade data. There is already a student-run API that provides access to professor and course data: <a href="https://umd.io">umd.io</a>.<br /><br /> The course and professor data on this website was obtained using a combination of umd.io and <a href="https://app.testudo.umd.edu/soc/">UMD's Schedule of Classes</a>. The grade data is from the <a href="https://www.irpa.umd.edu"">UMD Office of Institutional Research, Planning &amp; Assessment</a> (IRPA) and obtained through <a href="https://www.umd.edu/administration/public-information-request">a request</a> under <a href="http://www.marylandattorneygeneral.gov/OpenGov%20Documents/PIA_manual_printable.pdf">the state of Maryland's Public Information Act</a> (PIA).<br /><br/> The base URL of the API is <a href="https://api.planetterp.com/v1">https://api.planetterp.com/v1</a>.<br /><br /> For support, please email <a href="mailto:admin@planetterp.com">admin@planetterp.com</a>.
 
 ## Usage
 This API does not require any authentication. There are no hard rate limits, but please take a pause between each request.
 
+## Example
+Let's walk through an example of outputting the number of students who received an A in a course. This example will be written in Python.
+
+In our program, a user will enter the course they want to receive data for. We will then determine the number of students who received an A and tell the user that number.
+
+First, we read input from the user:
+
+<div class="center-column"></div>
+```python
+course_name = raw_input("Enter a course: ")
+```
+
+Next, we get data from the API. We will use the <a href="#planetterp-api-grades">Grades</a> endpoint. Specifically, we will get the grades for a course. To do this, we will use pass the course on the <code>course</code> parameter. The URL to do this is <code>https://api.planetterp.com/v1/grades?course=COURSE_NAME</code>.
+
+We will get the data using the <a href="https://requests.readthedocs.io/">Requests Python library</a>:
+
+<div class="center-column"></div>
+```python
+import requests
+import json
+
+grade_data = requests.get('https://api.planetterp.com/v1/grades?course=' + course_name).json()
+```
+
+Now we report the data to the user:
+
+<div class="center-column"></div>
+```python
+for course_grade_data in grade_data:
+	print "Number of students who received an A in {course} section {section} for semester {semester}: {num_a}".format(course = course_grade_data['course'], section = course_grade_data['section'], semester = course_grade_data['semester'], num_a = course_grade_data['A']
+```
+
+At this point, when the user enters a course, they will be shown the number of students who received an A.
+
+Let's handle the case where a user enters a course that hasn't been taught at UMD. If the user enters, for example, "ABCD123", we will receive this error: <code>TypeError: string indices must be integers</code>, because the endpoint did not return grade data and our program tried to access grade data that was not returned.
+
+We can handle this error. If a course is requested on the API, and the course is not found, the following response is returned: <code>{"error": "course not found"}</code>. Let's handle this case:
+
+<div class="center-column"></div>
+```python
+if 'error' in grade_data and grade_data['error'] == "course not found":
+	print "Error: Course not found."
+else:
+	... print out relevant data
+```
+
+That's it! Here is our program:
+
+<div class="center-column"></div>
+```python
+import requests
+import json
+course_name = raw_input("Enter a course: ")
+
+grade_data = requests.get('https://api.planetterp.com/v1/grades?course=' + course_name).json()
+
+if 'error' in grade_data and grade_data['error'] == "course not found":
+	print "Error: Course not found."
+else:
+	for course_grade_data in grade_data:
+		print "Number of students who received an A in {course} section {section} for semester {semester}: {num_a}".format(course = course_grade_data['course'], section = course_grade_data['section'], semester = course_grade_data['semester'], num_a = course_grade_data['A'])
+```
+
 <h1 id="planetterp-api-courses">Courses</h1>
+
+## Get a course
+
+```shell
+# You can also use wget
+curl -X GET https://api.planetterp.com/v1/course?name=MATH140
+
+```
+
+```http
+GET https://api.planetterp.com/v1/course?name=MATH140 HTTP/1.1
+Host: api.planetterp.com
+
+```
+
+```javascript
+
+fetch('https://api.planetterp.com/v1/course?name=MATH140',
+{
+  method: 'GET'
+
+})
+.then(function(res) {
+    return res.json();
+}).then(function(body) {
+    console.log(body);
+});
+
+```
+
+```ruby
+require 'rest-client'
+require 'json'
+
+result = RestClient.get 'https://api.planetterp.com/v1/course',
+  params: {
+  'name' => 'string'
+}
+
+p JSON.parse(result)
+
+```
+
+```python
+import requests
+
+r = requests.get('https://api.planetterp.com/v1/course', params={
+  'name': 'MATH140'
+})
+
+print(r.json())
+
+```
+
+```php
+<?php
+
+require 'vendor/autoload.php';
+
+$client = new \GuzzleHttp\Client();
+
+// Define array of request body.
+$request_body = array();
+
+try {
+    $response = $client->request('GET','https://api.planetterp.com/v1/course', array(
+        'headers' => $headers,
+        'json' => $request_body,
+       )
+    );
+    print_r($response->getBody()->getContents());
+ }
+ catch (\GuzzleHttp\Exception\BadResponseException $e) {
+    // handle exception or api errors.
+    print_r($e->getMessage());
+ }
+
+ // ...
+
+```
+
+```java
+URL obj = new URL("https://api.planetterp.com/v1/course?name=MATH140");
+HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+con.setRequestMethod("GET");
+int responseCode = con.getResponseCode();
+BufferedReader in = new BufferedReader(
+    new InputStreamReader(con.getInputStream()));
+String inputLine;
+StringBuffer response = new StringBuffer();
+while ((inputLine = in.readLine()) != null) {
+    response.append(inputLine);
+}
+in.close();
+System.out.println(response.toString());
+
+```
+
+```go
+package main
+
+import (
+       "bytes"
+       "net/http"
+)
+
+func main() {
+
+    data := bytes.NewBuffer([]byte{jsonReq})
+    req, err := http.NewRequest("GET", "https://api.planetterp.com/v1/course", data)
+    req.Header = headers
+
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    // ...
+}
+
+```
+
+Get a course.
+
+`GET https://api.planetterp.com/v1/course`
+
+<h3 id="get-a-course-parameters">Query Parameters</h3>
+
+|Name|Type|Description|
+|---|---|---|---|---|
+|name|string|<strong>Required.</strong> Show the given course.|
+|reviews|boolean|<em>Optional.</em> Show reviews for the course (reviews for professors that taught the course and have this course listed as the one being reviewed). Default: <code>false</code>|
+
+<!-- 
+ -->
+
+<!-- 
+
+<h3 id="get-a-course-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Returns course matching query|None|
+|400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
+
+ -->
+
+<!-- <aside class="success">
+This operation does not require authentication
+</aside>
+ -->
 
 ## Get courses
 
@@ -158,7 +369,7 @@ Get all courses, in alphabetical order.
 |Name|Type|Description|
 |---|---|---|---|---|
 |department|string|<em>Optional.</em> Only get courses in a department. Must be four characters. Default: all departments|
-|reviews|boolean|<em>Optional.</em> Show reviews for the course (reviews for professors that taught the course and listed this course as the one being reviewed). Default: <code>false</code>|
+|reviews|boolean|<em>Optional.</em> Show reviews for the course (reviews for professors that taught the course and have this course listed as the one being reviewed). Default: <code>false</code>|
 |limit|integer|<em>Optional.</em> Maximum number of records to return. Must be between 1 and 1000. Default: <code>100</code>|
 |offset|integer|<em>Optional.</em> Number of records to skip for pagination. Default: <code>0</code>|
 
@@ -361,7 +572,7 @@ Get a professor.
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Returns professors matching query|Inline|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Returns professor matching query|Inline|
 |400|[Bad Request](https://tools.ietf.org/html/rfc7231#section-6.5.1)|bad input parameter|None|
 
 <h3 id="get-a-professor-responseschema">Response Schema</h3>
@@ -612,13 +823,13 @@ This operation does not require authentication
 
 ```shell
 # You can also use wget
-curl -X GET https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001 \
+curl -X GET https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001&section=0101 \
   -H 'Accept: application/json'
 
 ```
 
 ```http
-GET https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001 HTTP/1.1
+GET https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001&section=0101 HTTP/1.1
 Host: api.planetterp.com
 Accept: application/json
 
@@ -630,7 +841,7 @@ const headers = {
   'Accept':'application/json'
 };
 
-fetch('https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001',
+fetch('https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001&section=0101',
 {
   method: 'GET',
 
@@ -655,7 +866,8 @@ headers = {
 result = RestClient.get 'https://api.planetterp.com/v1/grades',
   params: {
   'professor' => 'string',
-'semester' => 'string'
+'semester' => 'string',
+'section' => 'string'
 }, headers: headers
 
 p JSON.parse(result)
@@ -669,7 +881,7 @@ headers = {
 }
 
 r = requests.get('https://api.planetterp.com/v1/grades', params={
-  'professor': 'Jon Snow',  'semester': '202001'
+  'professor': 'Jon Snow',  'semester': '202001',  'section': '0101'
 }, headers = headers)
 
 print(r.json())
@@ -708,7 +920,7 @@ try {
 ```
 
 ```java
-URL obj = new URL("https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001");
+URL obj = new URL("https://api.planetterp.com/v1/grades?professor=Jon%20Snow&semester=202001&section=0101");
 HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 con.setRequestMethod("GET");
 int responseCode = con.getResponseCode();
@@ -760,6 +972,7 @@ Get grades for a course, professor, or both. This endpoint returns all of the gr
 |course|string|<em>Optional.</em> Show only grades for the given course.|
 |professor|string|<em>Optional.</em> Show only grades for the given professor.|
 |semester|string|<em>Optional.</em> Show only grades for the given semester. Semester should be provided as the year followed by the semester code. `01` means Spring and `08` means Fall. For example, `202001` means Spring 2020. Default: all semesters|
+|section|string|<em>Optional.</em> Show only grades for the given section. Default: all sections|
 
 <!-- 
  -->
